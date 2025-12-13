@@ -35,7 +35,7 @@ suite('Functional Tests', function () {
         });
     });
 
-    // #3
+    // #3  ✅ PUT /travellers
     test('Send {surname: "Colombo"}', function (done) {
       chai
         .request(server)
