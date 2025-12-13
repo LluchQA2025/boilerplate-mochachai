@@ -8,9 +8,9 @@ const runner = require('./test-runner');
 const bodyParser = require('body-parser');
 
 // CORS (FCC)
-app.use(cors());
+app.use(cors({ optionsSuccessStatus: 200 }));
 
-// Parsers
+// Parsers estándar
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
@@ -28,73 +28,63 @@ app.get('/hello', function (req, res) {
   res.type('txt').send('hello ' + name);
 });
 
-// OPTIONS preflight (por si FCC lo hace)
-app.options('/travellers', cors());
+// OPTIONS preflight (por si FCC lo dispara)
+app.options('/travellers', cors(), function (req, res) {
+  res.sendStatus(200);
+});
 
-// PUT /travellers (FCC strict)
-app.put('/travellers', function (req, res) {
-  // 1) Obtener surname aunque venga "mal" (sin header JSON)
-  let surname;
+// PUT /travellers
+// IMPORTANTE: agregamos un parser de texto SOLO para esta ruta,
+// para soportar cuando llegue JSON SIN Content-Type.
+app.put('/travellers', bodyParser.text({ type: '*/*' }), function (req, res) {
+  let payload = req.body;
 
-  // Caso normal: application/json
-  if (req.body && typeof req.body === 'object' && req.body.surname) {
-    surname = req.body.surname;
-  }
-
-  // Caso: bodyParser.urlencoded puede dejarlo como:
-  // { '{"surname":"Colombo"}': '' }
-  if (!surname && req.body && typeof req.body === 'object') {
-    const keys = Object.keys(req.body);
-    if (keys.length === 1) {
-      const onlyKey = keys[0];
-      try {
-        const parsed = JSON.parse(onlyKey);
-        if (parsed && parsed.surname) surname = parsed.surname;
-      } catch (e) {
-        // ignore
-      }
-    }
-  }
-
-  // Caso rarísimo: req.body string
-  if (!surname && typeof req.body === 'string') {
+  // Si body-parser ya lo parseó como objeto (application/json), OK.
+  // Si llegó como texto (sin Content-Type), intentamos JSON.parse.
+  if (typeof payload === 'string') {
     try {
-      const parsed = JSON.parse(req.body);
-      if (parsed && parsed.surname) surname = parsed.surname;
+      payload = JSON.parse(payload);
     } catch (e) {
-      // ignore
+      payload = {};
     }
   }
 
-  // 2) Resolver respuesta
+  const surnameRaw = payload && payload.surname ? String(payload.surname) : '';
+  const surname = surnameRaw.toLowerCase();
+
   let data = { name: 'unknown' };
 
-  if (surname) {
-    switch (surname.toLowerCase()) {
-      case 'polo':
-        data = { name: 'Marco', surname: 'Polo', dates: '1254 - 1324' };
-        break;
-      case 'colombo':
-        data = { name: 'Cristoforo', surname: 'Colombo', dates: '1451 - 1506' };
-        break;
-      case 'vespucci':
-        data = { name: 'Amerigo', surname: 'Vespucci', dates: '1454 - 1512' };
-        break;
-      case 'da verrazzano':
-      case 'verrazzano':
-        data = { name: 'Giovanni', surname: 'da Verrazzano', dates: '1485 - 1528' };
-        break;
-      default:
-        data = { name: 'unknown' };
-    }
+  switch (surname) {
+    case 'polo':
+      data = { name: 'Marco', surname: 'Polo', dates: '1254 - 1324' };
+      break;
+    case 'colombo':
+      data = { name: 'Cristoforo', surname: 'Colombo', dates: '1451 - 1506' };
+      break;
+    case 'vespucci':
+      data = { name: 'Amerigo', surname: 'Vespucci', dates: '1454 - 1512' };
+      break;
+    case 'da verrazzano':
+    case 'verrazzano':
+      data = { name: 'Giovanni', surname: 'da Verrazzano', dates: '1485 - 1528' };
+      break;
+    default:
+      data = { name: 'unknown' };
   }
 
-  // 3) CLAVE: Content-Type EXACTO (SIN charset) + enviar como Buffer
-  const payload = Buffer.from(JSON.stringify(data));
+  // Respuesta EXACTA para FCC:
+  // - Content-Type: application/json (sin charset)
+  // - body JSON
+  // - No-cache para evitar respuestas viejas por Cloudflare/Render
+  const json = JSON.stringify(data);
 
   res.status(200);
-  res.setHeader('Content-Type', 'application/json');
-  return res.send(payload);
+  res.set('Content-Type', 'application/json');
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.set('Pragma', 'no-cache');
+  res.set('Expires', '0');
+
+  res.send(Buffer.from(json));
 });
 
 let error;
@@ -153,8 +143,6 @@ function testFilter(tests, type, n) {
       out = tests;
   }
 
-  if (n !== undefined) {
-    return out[n] || out;
-  }
+  if (n !== undefined) return out[n] || out;
   return out;
 }
