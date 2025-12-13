@@ -103,6 +103,7 @@ suite('Arrays', function () {
     assert.isArray('isThisAnArray?'.split(''), 'String.prototype.split() returns an array');
     assert.isNotArray([1, 2, 3].indexOf(2), 'indexOf returns a number');
   });
+
   // #12
   test('Array #include, #notInclude', function () {
     assert.notInclude(winterMonths, 'jul', "It's summer in july...");
@@ -123,11 +124,13 @@ suite('Strings', function () {
     assert.isString(process.env.PATH, 'An env variable is a string (or undefined)');
     assert.isString(JSON.stringify({ type: 'object' }), 'JSON is a string');
   });
+
   // #14
   test('String #include, #notInclude', function () {
     assert.include('Arrow', 'row', "'Arrow' contains 'row'");
     assert.notInclude('dart', 'queue', "But 'dart' doesn't contain 'queue'");
   });
+
   // #15
   test('#match, #notMatch', function () {
     const regex = /^#\sname:\s[\w\s]+,\sage\:\s\d+\s?$/;
