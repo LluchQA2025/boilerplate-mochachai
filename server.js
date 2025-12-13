@@ -5,6 +5,20 @@ const bodyParser = require('body-parser');
 
 const app = express();
 
+// ========= CORS (MUY IMPORTANTE PARA FCC) =========
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+
+  // Responde preflight (OPTIONS) rápido
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(204);
+  }
+
+  next();
+});
+
 // ========= MIDDLEWARES =========
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -36,7 +50,6 @@ function renderPage(name = '', surname = '') {
 
         <hr />
 
-        <!-- Estos IDs son clave para Zombie.js -->
         <div id="result">
           <span id="name">${name}</span>
           <span id="surname">${surname}</span>
@@ -59,10 +72,6 @@ app.get('/hello', (req, res) => {
 // ===== FCC CHALLENGE (chai-http PUT) =====
 app.put('/travellers', (req, res) => {
   const surname = req.body.surname;
-
-  // Para el challenge PUT, FCC espera:
-  // - Colombo -> Cristoforo
-  // - da Verrazzano -> Giovanni
   const name = explorerNameBySurname(surname);
 
   res.status(200).json({
@@ -76,7 +85,6 @@ app.post('/travellers', (req, res) => {
   const surname = req.body.surname;
   const name = explorerNameBySurname(surname);
 
-  // Importante: devolvemos UNA página que sigue teniendo el form + result (#name/#surname)
   res.status(200).type('html').send(renderPage(name, surname));
 });
 
