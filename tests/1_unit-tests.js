@@ -179,4 +179,3 @@ suite('Objects', function () {
     assert.notInstanceOf(myCar.wheels, String);
   });
 });
-
