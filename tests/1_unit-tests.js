@@ -48,9 +48,10 @@ suite('Unit Tests', function () {
 
   // #6
   test('#strictEqual, #notStrictEqual', function () {
-    assert.notStrictEqual(6, '6', '6 is not strictly equal to "6"');
-    assert.strictEqual(6, 6, '6 is strictly equal to 6');
-    assert.notStrictEqual(6, 3, '6 is not strictly equal to 3');
+    assert.notStrictEqual(6, '6');
+    assert.strictEqual(6, 6);
+    assert.notStrictEqual(6, 3);
+    assert.strictEqual(6 + 2, 8);
   });
 
   // #7
