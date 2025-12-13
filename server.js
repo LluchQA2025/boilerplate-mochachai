@@ -7,7 +7,7 @@ const cors = require('cors');
 const runner = require('./test-runner');
 const bodyParser = require('body-parser');
 
-// CORS básico (suficiente para FCC)
+// CORS (FCC)
 app.use(cors());
 
 // Body parsers
@@ -25,61 +25,38 @@ app.use(express.static(__dirname + '/public'));
 // Hello endpoint
 app.get('/hello', function (req, res) {
   const name = req.query.name || 'Guest';
-  res.type('text').send('hello ' + name);
+  res.type('txt').send('hello ' + name);
 });
 
-// 🔑 REQUIRED: OPTIONS preflight for FCC
-app.options('/travellers', function (req, res) {
-  res
-    .status(200)
-    .type('application/json')
-    .send();
-});
+// ✅ OPTIONS preflight (FCC puede necesitarlo)
+app.options('/travellers', cors());
 
-// PUT /travellers (FCC compliant)
+// PUT /travellers
 app.put('/travellers', function (req, res) {
-  let data = {};
+  let data = { name: 'unknown' };
 
   if (req.body && req.body.surname) {
     switch (req.body.surname.toLowerCase()) {
       case 'polo':
-        data = {
-          name: 'Marco',
-          surname: 'Polo',
-          dates: '1254 - 1324'
-        };
+        data = { name: 'Marco', surname: 'Polo', dates: '1254 - 1324' };
         break;
       case 'colombo':
-        data = {
-          name: 'Cristoforo',
-          surname: 'Colombo',
-          dates: '1451 - 1506'
-        };
+        data = { name: 'Cristoforo', surname: 'Colombo', dates: '1451 - 1506' };
         break;
       case 'vespucci':
-        data = {
-          name: 'Amerigo',
-          surname: 'Vespucci',
-          dates: '1454 - 1512'
-        };
+        data = { name: 'Amerigo', surname: 'Vespucci', dates: '1454 - 1512' };
         break;
       case 'da verrazzano':
       case 'verrazzano':
-        data = {
-          name: 'Giovanni',
-          surname: 'da Verrazzano',
-          dates: '1485 - 1528'
-        };
+        data = { name: 'Giovanni', surname: 'da Verrazzano', dates: '1485 - 1528' };
         break;
       default:
         data = { name: 'unknown' };
     }
   }
 
-  res
-    .status(200)
-    .type('application/json')
-    .send(JSON.stringify(data));
+  // 🔑 Clave: JSON real (no stringify manual)
+  res.status(200).type('application/json').json(data);
 });
 
 let error;
