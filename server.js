@@ -2,14 +2,14 @@
 
 const express = require('express');
 const app = express();
+
 const cors = require('cors');
+const bodyParser = require('body-parser');
 const runner = require('./test-runner');
 
 app.use(cors());
-
-// ✅ SOLO los parsers normales
-app.use(express.urlencoded({ extended: false }));
-app.use(express.json());
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 
 // Home
 app.get('/', function (req, res) {
@@ -22,10 +22,10 @@ app.use(express.static(__dirname + '/public'));
 // Hello
 app.get('/hello', function (req, res) {
   const name = req.query.name || 'Guest';
-  res.type('txt').send('hello ' + name);
+  res.type('text').send('hello ' + name);
 });
 
-// ✅ PUT /travellers (FCC oficial)
+// PUT /travellers  FCC CANONICAL
 app.put('/travellers', function (req, res) {
   let data = { name: 'unknown' };
 
@@ -52,25 +52,40 @@ app.put('/travellers', function (req, res) {
 
 // FCC test endpoint
 let error;
-app.get('/_api/get-tests', cors(), function (req, res, next) {
-  if (error) return res.json({ status: 'unavailable' });
-  next();
-}, function (req, res, next) {
-  if (!runner.report) return next();
-  res.json(testFilter(runner.report, req.query.type, req.query.n));
-}, function (req, res) {
-  runner.on('done', function () {
-    process.nextTick(() =>
-      res.json(testFilter(runner.report, req.query.type, req.query.n))
-    );
-  });
-});
+app.get(
+  '/_api/get-tests',
+  cors(),
+  function (req, res, next) {
+    if (error) return res.json({ status: 'unavailable' });
+    next();
+  },
+  function (req, res, next) {
+    if (!runner.report) return next();
+    res.json(testFilter(runner.report, req.query.type, req.query.n));
+  },
+  function (req, res) {
+    runner.on('done', function () {
+      process.nextTick(() =>
+        res.json(testFilter(runner.report, req.query.type, req.query.n))
+      );
+    });
+  }
+);
 
+// Start server
 const port = process.env.PORT || 3000;
 app.listen(port, function () {
   console.log('Listening on port ' + port);
   console.log('Running Tests...');
-  setTimeout(() => runner.run(), 1500);
+  setTimeout(function () {
+    try {
+      runner.run();
+    } catch (e) {
+      error = e;
+      console.log('Tests are not valid:');
+      console.log(error);
+    }
+  }, 1500);
 });
 
 module.exports = app;
