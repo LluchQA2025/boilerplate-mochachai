@@ -7,15 +7,7 @@ const cors = require('cors');
 const runner = require('./test-runner');
 const bodyParser = require('body-parser');
 
-app.use(cors({
-  origin: '*',
-  methods: ['GET', 'POST', 'PUT', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  optionsSuccessStatus: 200
-}));
-
-app.options('*', cors());
-
+app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
@@ -30,54 +22,35 @@ app.get('/hello', function (req, res) {
   res.type('txt').send('hello ' + name);
 });
 
-/* ===================================================== */
-
 app.put('/travellers', function (req, res) {
-  const surname = req.body && req.body.surname
-    ? req.body.surname.toLowerCase()
-    : '';
-
   let data = {};
 
-  switch (surname) {
-    case 'polo':
-      data = {
-        name: 'Marco',
-        surname: 'Polo',
-        dates: '1254 - 1324'
-      };
-      break;
-    case 'colombo':
-      data = {
-        name: 'Cristoforo',
-        surname: 'Colombo',
-        dates: '1451 - 1506'
-      };
-      break;
-    case 'vespucci':
-      data = {
-        name: 'Amerigo',
-        surname: 'Vespucci',
-        dates: '1454 - 1512'
-      };
-      break;
-    case 'da verrazzano':
-    case 'verrazzano':
-      data = {
-        name: 'Giovanni',
-        surname: 'da Verrazzano',
-        dates: '1485 - 1528'
-      };
-      break;
-    default:
-      data = { name: 'unknown' };
+  if (req.body && req.body.surname) {
+    switch (req.body.surname.toLowerCase()) {
+      case 'polo':
+        data = { name: 'Marco', surname: 'Polo', dates: '1254 - 1324' };
+        break;
+      case 'colombo':
+        data = { name: 'Cristoforo', surname: 'Colombo', dates: '1451 - 1506' };
+        break;
+      case 'vespucci':
+        data = { name: 'Amerigo', surname: 'Vespucci', dates: '1454 - 1512' };
+        break;
+      case 'da verrazzano':
+      case 'verrazzano':
+        data = { name: 'Giovanni', surname: 'da Verrazzano', dates: '1485 - 1528' };
+        break;
+      default:
+        data = { name: 'unknown' };
+    }
   }
 
-  // ✅ ESTA LÍNEA ES LA CLAVE PARA FCC
-  res.status(200).json(data);
+  // 🔴 CLAVE PARA FCC
+  res
+    .status(200)
+    .type('application/json')
+    .send(JSON.stringify(data));
 });
-
-/* ===================================================== */
 
 let error;
 
@@ -91,9 +64,7 @@ function (req, res, next) {
 },
 function (req, res) {
   runner.on('done', function () {
-    process.nextTick(() =>
-      res.json(testFilter(runner.report, req.query.type, req.query.n))
-    );
+    process.nextTick(() => res.json(testFilter(runner.report, req.query.type, req.query.n)));
   });
 });
 
@@ -112,7 +83,7 @@ app.listen(port, function () {
   }, 1500);
 });
 
-module.exports = app; // for testing
+module.exports = app;
 
 function testFilter(tests, type, n) {
   let out;
