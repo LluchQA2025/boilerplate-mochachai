@@ -68,7 +68,8 @@ suite('Functional Tests', function () {
 
 const Browser = require('zombie');
 
-Browser.site = 'http://127.0.0.1:3000/';
+const port = process.env.PORT || 3000;
+Browser.site = `http://127.0.0.1:${port}/`;
 
 suite('Functional Tests with Zombie.js', function () {
   this.timeout(5000);
