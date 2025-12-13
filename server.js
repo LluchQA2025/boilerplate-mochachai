@@ -7,21 +7,28 @@ const cors = require('cors');
 const runner = require('./test-runner');
 const bodyParser = require('body-parser');
 
+// CORS (FCC compatible)
 app.use(cors());
+
+// Body parsers
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
+// Home
 app.get('/', function (req, res) {
   res.sendFile(__dirname + '/views/index.html');
 });
 
+// Static files
 app.use(express.static(__dirname + '/public'));
 
+// GET /hello
 app.get('/hello', function (req, res) {
   const name = req.query.name || 'Guest';
-  res.type('txt').send('hello ' + name);
+  res.send('hello ' + name);
 });
 
+// PUT /travellers  ✅ FCC EXACT EXPECTATION
 app.put('/travellers', function (req, res) {
   let data = { name: 'unknown' };
 
@@ -40,32 +47,37 @@ app.put('/travellers', function (req, res) {
       case 'verrazzano':
         data = { name: 'Giovanni', surname: 'da Verrazzano', dates: '1485 - 1528' };
         break;
-      default:
-        data = { name: 'unknown' };
     }
   }
 
-  res.json(data);
+  // 🚨 NO type(), NO stringify(), SOLO json()
+  res.status(200).json(data);
 });
 
 let error;
 
-app.get('/_api/get-tests', cors(), function (req, res, next) {
-  if (error) return res.json({ status: 'unavailable' });
-  next();
-},
-function (req, res, next) {
-  if (!runner.report) return next();
-  res.json(testFilter(runner.report, req.query.type, req.query.n));
-},
-function (req, res) {
-  runner.on('done', function () {
-    process.nextTick(() => {
-      res.json(testFilter(runner.report, req.query.type, req.query.n));
+// FCC test endpoint
+app.get(
+  '/_api/get-tests',
+  cors(),
+  function (req, res, next) {
+    if (error) return res.json({ status: 'unavailable' });
+    next();
+  },
+  function (req, res, next) {
+    if (!runner.report) return next();
+    res.json(testFilter(runner.report, req.query.type, req.query.n));
+  },
+  function (req, res) {
+    runner.on('done', function () {
+      process.nextTick(() =>
+        res.json(testFilter(runner.report, req.query.type, req.query.n))
+      );
     });
-  });
-});
+  }
+);
 
+// Server start
 const port = process.env.PORT || 3000;
 app.listen(port, function () {
   console.log('Listening on port ' + port);
@@ -83,8 +95,10 @@ app.listen(port, function () {
 
 module.exports = app;
 
+// Helper
 function testFilter(tests, type, n) {
   let out;
+
   switch (type) {
     case 'unit':
       out = tests.filter(t => !t.context.match('Functional Tests'));
@@ -95,6 +109,9 @@ function testFilter(tests, type, n) {
     default:
       out = tests;
   }
-  if (n !== undefined) return out[n] || out;
+
+  if (n !== undefined) {
+    return out[n] || out;
+  }
   return out;
 }
