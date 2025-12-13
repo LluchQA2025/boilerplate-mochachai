@@ -125,13 +125,13 @@ suite('Strings', function () {
     assert.isString(JSON.stringify({ type: 'object' }), 'JSON is a string');
   });
 
-  // #14 ✅
+  // #14
   test('String #include, #notInclude', function () {
     assert.include('Arrow', 'row', "'Arrow' contains 'row'");
     assert.notInclude('dart', 'queue', "But 'dart' doesn't contain 'queue'");
   });
 
-// #15
+  // #15
   test('#match, #notMatch', function () {
     const regex = /^#\sname:\s[\w\s]+,\sage\:\s\d+\s?$/;
     assert.match(formatPeople('John Doe', 35), regex);
@@ -158,7 +158,7 @@ const myCar = new Car();
 const airlinePlane = new Plane();
 
 suite('Objects', function () {
-  // #16
+  // #16 ✅
   test('#property, #notProperty', function () {
     assert.notProperty(myCar, 'wings', "Cars don't have wings");
     assert.property(airlinePlane, 'engines', 'Planes have engines');
