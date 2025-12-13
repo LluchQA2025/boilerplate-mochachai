@@ -7,18 +7,10 @@ const cors = require('cors');
 const runner = require('./test-runner');
 const bodyParser = require('body-parser');
 
-// ✅ CORS robusto (incluye preflight OPTIONS)
-app.use(
-  cors({
-    origin: '*',
-    methods: ['GET', 'POST', 'PUT', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-    optionsSuccessStatus: 200
-  })
-);
-app.options('*', cors());
+// CORS (FCC)
+app.use(cors());
 
-// ✅ Body parsers
+// Parsers
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
@@ -36,32 +28,49 @@ app.get('/hello', function (req, res) {
   res.type('txt').send('hello ' + name);
 });
 
-// PUT /travellers (FCC-proof)
-app.put('/travellers', function (req, res) {
-  let surname = req.body && req.body.surname;
+// OPTIONS preflight (por si FCC lo hace)
+app.options('/travellers', cors());
 
-  // ✅ FCC a veces manda el body SIN content-type JSON:
-  // bodyParser.urlencoded puede dejar algo tipo:
+// PUT /travellers (FCC strict)
+app.put('/travellers', function (req, res) {
+  // 1) Obtener surname aunque venga "mal" (sin header JSON)
+  let surname;
+
+  // Caso normal: application/json
+  if (req.body && typeof req.body === 'object' && req.body.surname) {
+    surname = req.body.surname;
+  }
+
+  // Caso FCC/curl sin header: bodyParser.urlencoded puede dejarlo como:
   // { '{"surname":"Colombo"}': '' }
   if (!surname && req.body && typeof req.body === 'object') {
     const keys = Object.keys(req.body);
     if (keys.length === 1) {
-      const maybeJson = keys[0];
-      if (typeof maybeJson === 'string' && maybeJson.trim().startsWith('{')) {
-        try {
-          const parsed = JSON.parse(maybeJson);
-          surname = parsed && parsed.surname;
-        } catch (e) {
-          // ignore
-        }
+      const onlyKey = keys[0];
+      try {
+        const parsed = JSON.parse(onlyKey);
+        if (parsed && parsed.surname) surname = parsed.surname;
+      } catch (e) {
+        // ignore
       }
     }
   }
 
+  // Caso rarísimo: req.body string
+  if (!surname && typeof req.body === 'string') {
+    try {
+      const parsed = JSON.parse(req.body);
+      if (parsed && parsed.surname) surname = parsed.surname;
+    } catch (e) {
+      // ignore
+    }
+  }
+
+  // 2) Resolver respuesta
   let data = { name: 'unknown' };
 
   if (surname) {
-    switch (String(surname).toLowerCase()) {
+    switch (surname.toLowerCase()) {
       case 'polo':
         data = { name: 'Marco', surname: 'Polo', dates: '1254 - 1324' };
         break;
@@ -80,11 +89,10 @@ app.put('/travellers', function (req, res) {
     }
   }
 
-  // ✅ Forzar JSON “reconocible” por el validador remoto
-  res
-    .status(200)
-    .set('Content-Type', 'application/json')
-    .send(JSON.stringify(data));
+  // 3) CLAVE: Content-Type EXACTO (sin charset)
+  res.status(200);
+  res.set('Content-Type', 'application/json');
+  return res.send(JSON.stringify(data));
 });
 
 let error;
@@ -128,6 +136,7 @@ app.listen(port, function () {
 
 module.exports = app;
 
+// Test filter helper
 function testFilter(tests, type, n) {
   let out;
 
