@@ -7,8 +7,8 @@ const cors = require('cors');
 const runner = require('./test-runner');
 const bodyParser = require('body-parser');
 
-// CORS (FCC)
-app.use(cors());
+// FCC CORS
+app.use(cors({ origin: '*' }));
 
 // Body parsers
 app.use(bodyParser.json());
@@ -22,14 +22,11 @@ app.get('/', function (req, res) {
 // Static assets
 app.use(express.static(__dirname + '/public'));
 
-// Hello endpoint
+// GET /hello
 app.get('/hello', function (req, res) {
   const name = req.query.name || 'Guest';
   res.type('txt').send('hello ' + name);
 });
-
-// ✅ OPTIONS preflight (FCC puede necesitarlo)
-app.options('/travellers', cors());
 
 // PUT /travellers
 app.put('/travellers', function (req, res) {
@@ -55,8 +52,8 @@ app.put('/travellers', function (req, res) {
     }
   }
 
-  // 🔑 Clave: JSON real (no stringify manual)
-  res.status(200).type('application/json').json(data);
+  // ✅ FCC espera JSON REAL (no stringify manual, no .type manual)
+  return res.json(data);
 });
 
 let error;
@@ -100,7 +97,6 @@ app.listen(port, function () {
 
 module.exports = app;
 
-// Test filter helper
 function testFilter(tests, type, n) {
   let out;
 
@@ -115,8 +111,6 @@ function testFilter(tests, type, n) {
       out = tests;
   }
 
-  if (n !== undefined) {
-    return out[n] || out;
-  }
+  if (n !== undefined) return out[n] || out;
   return out;
 }
