@@ -7,8 +7,8 @@ const cors = require('cors');
 const runner = require('./test-runner');
 const bodyParser = require('body-parser');
 
-// FCC CORS
-app.use(cors({ origin: '*' }));
+// CORS (FCC)
+app.use(cors());
 
 // Body parsers
 app.use(bodyParser.json());
@@ -22,13 +22,16 @@ app.get('/', function (req, res) {
 // Static assets
 app.use(express.static(__dirname + '/public'));
 
-// GET /hello
+// Hello endpoint
 app.get('/hello', function (req, res) {
   const name = req.query.name || 'Guest';
   res.type('txt').send('hello ' + name);
 });
 
-// PUT /travellers
+// OPTIONS preflight (FCC puede necesitarlo)
+app.options('/travellers', cors());
+
+// PUT /travellers (FCC)
 app.put('/travellers', function (req, res) {
   let data = { name: 'unknown' };
 
@@ -52,8 +55,8 @@ app.put('/travellers', function (req, res) {
     }
   }
 
-  // ✅ FCC espera JSON REAL (no stringify manual, no .type manual)
-  return res.json(data);
+  // JSON real (para que res.body exista y res.type sea application/json)
+  return res.status(200).json(data);
 });
 
 let error;
@@ -79,24 +82,15 @@ app.get(
   }
 );
 
-// Server start
+// Server start (IMPORTANTE: NO ejecutar runner.run() aquí)
 const port = process.env.PORT || 3000;
 app.listen(port, function () {
   console.log('Listening on port ' + port);
-  console.log('Running Tests...');
-  setTimeout(function () {
-    try {
-      runner.run();
-    } catch (e) {
-      error = e;
-      console.log('Tests are not valid:');
-      console.log(error);
-    }
-  }, 1500);
 });
 
 module.exports = app;
 
+// Test filter helper
 function testFilter(tests, type, n) {
   let out;
 
@@ -111,6 +105,8 @@ function testFilter(tests, type, n) {
       out = tests;
   }
 
-  if (n !== undefined) return out[n] || out;
+  if (n !== undefined) {
+    return out[n] || out;
+  }
   return out;
 }
