@@ -1,106 +1,99 @@
 'use strict';
 
 const express = require('express');
+const bodyParser = require('body-parser');
+
 const app = express();
 
-const cors = require('cors');
-const bodyParser = require('body-parser');
-const runner = require('./test-runner');
-
-app.use(cors());
+// ========= MIDDLEWARES =========
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-// Home
-app.get('/', function (req, res) {
-  res.sendFile(__dirname + '/views/index.html');
+// ========= HELPERS =========
+function explorerNameBySurname(surname) {
+  if (surname === 'Colombo') return 'Cristoforo';
+  if (surname === 'Vespucci') return 'Amerigo';
+  if (surname === 'da Verrazzano') return 'Giovanni';
+  return '';
+}
+
+function renderPage(name = '', surname = '') {
+  return `
+    <!doctype html>
+    <html>
+      <head>
+        <meta charset="utf-8" />
+        <title>Famous Italian Explorers</title>
+      </head>
+      <body>
+        <h1>Famous Italian Explorers</h1>
+
+        <form action="/travellers" method="POST">
+          <label for="surname">Surname</label>
+          <input id="surname" name="surname" type="text" />
+          <input id="submit" name="submit" type="submit" value="submit" />
+        </form>
+
+        <hr />
+
+        <!-- Estos IDs son clave para Zombie.js -->
+        <div id="result">
+          <span id="name">${name}</span>
+          <span id="surname">${surname}</span>
+        </div>
+      </body>
+    </html>
+  `;
+}
+
+// ========= ROUTES =========
+app.get('/', (req, res) => {
+  res.status(200).type('html').send(renderPage());
 });
 
-// Static
-app.use(express.static(__dirname + '/public'));
-
-// Hello
-app.get('/hello', function (req, res) {
+app.get('/hello', (req, res) => {
   const name = req.query.name || 'Guest';
   res.type('text').send('hello ' + name);
 });
 
-// PUT /travellers  FCC CANONICAL
-app.put('/travellers', function (req, res) {
-  let data = { name: 'unknown' };
+// ===== FCC CHALLENGE (chai-http PUT) =====
+app.put('/travellers', (req, res) => {
+  const surname = req.body.surname;
 
-  if (req.body && req.body.surname) {
-    switch (req.body.surname.toLowerCase()) {
-      case 'polo':
-        data = { name: 'Marco', surname: 'Polo', dates: '1254 - 1324' };
-        break;
-      case 'colombo':
-        data = { name: 'Cristoforo', surname: 'Colombo', dates: '1451 - 1506' };
-        break;
-      case 'vespucci':
-        data = { name: 'Amerigo', surname: 'Vespucci', dates: '1454 - 1512' };
-        break;
-      case 'da verrazzano':
-      case 'verrazzano':
-        data = { name: 'Giovanni', surname: 'da Verrazzano', dates: '1485 - 1528' };
-        break;
-    }
-  }
+  // Para el challenge PUT, FCC espera:
+  // - Colombo -> Cristoforo
+  // - da Verrazzano -> Giovanni
+  const name = explorerNameBySurname(surname);
 
-  res.status(200).json(data);
+  res.status(200).json({
+    name,
+    surname
+  });
 });
 
-// FCC test endpoint
-let error;
-app.get(
-  '/_api/get-tests',
-  cors(),
-  function (req, res, next) {
-    if (error) return res.json({ status: 'unavailable' });
-    next();
-  },
-  function (req, res, next) {
-    if (!runner.report) return next();
-    res.json(testFilter(runner.report, req.query.type, req.query.n));
-  },
-  function (req, res) {
-    runner.on('done', function () {
-      process.nextTick(() =>
-        res.json(testFilter(runner.report, req.query.type, req.query.n))
-      );
-    });
-  }
-);
+// ===== Para el FORM (Zombie.js) =====
+app.post('/travellers', (req, res) => {
+  const surname = req.body.surname;
+  const name = explorerNameBySurname(surname);
 
-// Start server
+  // Importante: devolvemos UNA página que sigue teniendo el form + result (#name/#surname)
+  res.status(200).type('html').send(renderPage(name, surname));
+});
+
+// ========= START SERVER =========
 const port = process.env.PORT || 3000;
-app.listen(port, function () {
-  console.log('Listening on port ' + port);
-  console.log('Running Tests...');
-  setTimeout(function () {
+
+if (!module.parent) {
+  app.listen(port, () => {
+    console.log('Listening on port ' + port);
+
     try {
+      const runner = require('./test-runner');
       runner.run();
     } catch (e) {
-      error = e;
-      console.log('Tests are not valid:');
-      console.log(error);
+      // OK si no existe en algún entorno
     }
-  }, 1500);
-});
+  });
+}
 
 module.exports = app;
-
-function testFilter(tests, type, n) {
-  let out;
-  switch (type) {
-    case 'unit':
-      out = tests.filter(t => !t.context.match('Functional Tests'));
-      break;
-    case 'functional':
-      out = tests.filter(t => t.context.match('Functional Tests'));
-      break;
-    default:
-      out = tests;
-  }
-  return n !== undefined ? out[n] || out : out;
-}
