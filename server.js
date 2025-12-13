@@ -112,9 +112,10 @@ module.exports = app; // for testing
 
 function testFilter(tests, type, n) {
   let out;
+
   switch (type) {
     case 'unit':
-      out = tests.filter(t => t.context.match('Unit Tests'));
+      out = tests.filter(t => !t.context.match('Functional Tests'));
       break;
     case 'functional':
       out = tests.filter(t => t.context.match('Functional Tests'));
@@ -122,6 +123,7 @@ function testFilter(tests, type, n) {
     default:
       out = tests;
   }
+
   if (n !== undefined) {
     return out[n] || out;
   }
