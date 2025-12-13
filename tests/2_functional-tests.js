@@ -35,11 +35,10 @@ suite('Functional Tests', function () {
         });
     });
 
-    // #3 ✅ EXACTO COMO FCC ESPERA
+    // #3
     test('Send {surname: "Colombo"}', function (done) {
       chai
         .request(server)
-        .keepOpen()
         .put('/travellers')
         .send({ surname: 'Colombo' })
         .end(function (err, res) {
@@ -55,7 +54,6 @@ suite('Functional Tests', function () {
     test('Send {surname: "da Verrazzano"}', function (done) {
       chai
         .request(server)
-        .keepOpen()
         .put('/travellers')
         .send({ surname: 'da Verrazzano' })
         .end(function (err, res) {
