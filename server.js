@@ -5,17 +5,21 @@ const bodyParser = require('body-parser');
 
 const app = express();
 
-// ========= CORS (MUY IMPORTANTE PARA FCC) =========
+// ====== FCC boilerplate: assertion analyser (necesario para /_api/get-tests) ======
+const analyser = require('./assertion-analyser');
+
+// ========= CORS (para que FCC pueda llamar endpoints) =========
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+  res.header(
+    'Access-Control-Allow-Headers',
+    'Origin, X-Requested-With, Content-Type, Accept'
+  );
 
-  // Responde preflight (OPTIONS) rápido
   if (req.method === 'OPTIONS') {
     return res.sendStatus(204);
   }
-
   next();
 });
 
@@ -59,6 +63,12 @@ function renderPage(name = '', surname = '') {
   `;
 }
 
+// ========= FCC REQUIRED ROUTE =========
+// freeCodeCamp llama esto para obtener los tests a ejecutar
+app.get('/_api/get-tests', (req, res) => {
+  res.json(analyser.getTests());
+});
+
 // ========= ROUTES =========
 app.get('/', (req, res) => {
   res.status(200).type('html').send(renderPage());
@@ -99,7 +109,7 @@ if (!module.parent) {
       const runner = require('./test-runner');
       runner.run();
     } catch (e) {
-      // OK si no existe en algún entorno
+      // OK
     }
   });
 }
