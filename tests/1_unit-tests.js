@@ -131,7 +131,7 @@ suite('Strings', function () {
     assert.notInclude('dart', 'queue', "But 'dart' doesn't contain 'queue'");
   });
 
-  // #15
+// #15
   test('#match, #notMatch', function () {
     const regex = /^#\sname:\s[\w\s]+,\sage\:\s\d+\s?$/;
     assert.match(formatPeople('John Doe', 35), regex);
