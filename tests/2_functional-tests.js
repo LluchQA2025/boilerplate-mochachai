@@ -35,14 +35,12 @@ suite('Functional Tests', function () {
         });
     });
 
-    // #3 ✅ PUT /travellers (FIX FCC)
+    // #3 ✅ EXACTO COMO FCC ESPERA
     test('Send {surname: "Colombo"}', function (done) {
       chai
         .request(server)
         .keepOpen()
         .put('/travellers')
-        .set('Accept', 'application/json')
-        .set('Content-Type', 'application/json')
         .send({ surname: 'Colombo' })
         .end(function (err, res) {
           assert.equal(res.status, 200);
@@ -59,8 +57,6 @@ suite('Functional Tests', function () {
         .request(server)
         .keepOpen()
         .put('/travellers')
-        .set('Accept', 'application/json')
-        .set('Content-Type', 'application/json')
         .send({ surname: 'da Verrazzano' })
         .end(function (err, res) {
           assert.equal(res.status, 200);
