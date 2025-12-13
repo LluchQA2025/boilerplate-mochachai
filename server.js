@@ -1,12 +1,16 @@
-'use strict'
+'use strict';
+
 const express = require('express');
 const app = express();
 
 const cors = require('cors');
 const runner = require('./test-runner');
-
 const bodyParser = require('body-parser');
+
+app.use(cors({ origin: '*' }));
+
 app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 
 app.get('/', function (req, res) {
   res.sendFile(__dirname + '/views/index.html');
