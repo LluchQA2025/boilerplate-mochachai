@@ -10,6 +10,7 @@ suite('Functional Tests', function () {
   this.timeout(5000);
 
   suite('Integration tests with chai-http', function () {
+
     // #1
     test('Test GET /hello with no name', function (done) {
       chai
@@ -34,7 +35,7 @@ suite('Functional Tests', function () {
         });
     });
 
-    // #3
+    // #3 ✅ PUT /travellers
     test('Send {surname: "Colombo"}', function (done) {
       chai
         .request(server)
@@ -81,6 +82,7 @@ suite('Functional Tests with Zombie.js', function () {
   });
 
   suite('Headless browser', function () {
+
     // #5
     test('should have a working "site" property', function () {
       assert.isOk(browser.site);
@@ -88,6 +90,7 @@ suite('Functional Tests with Zombie.js', function () {
   });
 
   suite('"Famous Italian Explorers" form', function () {
+
     // #6
     test('Submit the surname "Colombo" in the HTML form', function (done) {
       browser.fill('surname', 'Colombo');
