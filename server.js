@@ -7,31 +7,21 @@ const cors = require('cors');
 const runner = require('./test-runner');
 const bodyParser = require('body-parser');
 
-// CORS (FCC)
 app.use(cors());
-
-// Body parsers
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-// Home
 app.get('/', function (req, res) {
   res.sendFile(__dirname + '/views/index.html');
 });
 
-// Static assets
 app.use(express.static(__dirname + '/public'));
 
-// Hello endpoint
 app.get('/hello', function (req, res) {
   const name = req.query.name || 'Guest';
   res.type('txt').send('hello ' + name);
 });
 
-// OPTIONS preflight (FCC puede necesitarlo)
-app.options('/travellers', cors());
-
-// PUT /travellers (FCC)
 app.put('/travellers', function (req, res) {
   let data = { name: 'unknown' };
 
@@ -55,45 +45,46 @@ app.put('/travellers', function (req, res) {
     }
   }
 
-  // JSON real (para que res.body exista y res.type sea application/json)
-  return res.status(200).json(data);
+  res.json(data);
 });
 
 let error;
 
-// FCC test endpoint
-app.get(
-  '/_api/get-tests',
-  cors(),
-  function (req, res, next) {
-    if (error) return res.json({ status: 'unavailable' });
-    next();
-  },
-  function (req, res, next) {
-    if (!runner.report) return next();
-    res.json(testFilter(runner.report, req.query.type, req.query.n));
-  },
-  function (req, res) {
-    runner.on('done', function () {
-      process.nextTick(() =>
-        res.json(testFilter(runner.report, req.query.type, req.query.n))
-      );
+app.get('/_api/get-tests', cors(), function (req, res, next) {
+  if (error) return res.json({ status: 'unavailable' });
+  next();
+},
+function (req, res, next) {
+  if (!runner.report) return next();
+  res.json(testFilter(runner.report, req.query.type, req.query.n));
+},
+function (req, res) {
+  runner.on('done', function () {
+    process.nextTick(() => {
+      res.json(testFilter(runner.report, req.query.type, req.query.n));
     });
-  }
-);
+  });
+});
 
-// Server start (IMPORTANTE: NO ejecutar runner.run() aquí)
 const port = process.env.PORT || 3000;
 app.listen(port, function () {
   console.log('Listening on port ' + port);
+  console.log('Running Tests...');
+  setTimeout(function () {
+    try {
+      runner.run();
+    } catch (e) {
+      error = e;
+      console.log('Tests are not valid:');
+      console.log(error);
+    }
+  }, 1500);
 });
 
 module.exports = app;
 
-// Test filter helper
 function testFilter(tests, type, n) {
   let out;
-
   switch (type) {
     case 'unit':
       out = tests.filter(t => !t.context.match('Functional Tests'));
@@ -104,9 +95,6 @@ function testFilter(tests, type, n) {
     default:
       out = tests;
   }
-
-  if (n !== undefined) {
-    return out[n] || out;
-  }
+  if (n !== undefined) return out[n] || out;
   return out;
 }
