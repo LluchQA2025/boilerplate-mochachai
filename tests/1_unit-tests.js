@@ -165,7 +165,7 @@ suite('Objects', function () {
     assert.property(myCar, 'wheels', 'Cars have wheels');
   });
 
-  // #17 ✅
+  // #17
   test('#typeOf, #notTypeOf', function () {
     assert.typeOf(myCar, 'object', 'myCar is an object');
     assert.typeOf(myCar.model, 'string', 'model is a string');
@@ -174,7 +174,7 @@ suite('Objects', function () {
     assert.typeOf(myCar.wheels, 'number', 'wheels is a number');
   });
 
-  // #18
+  // #18 ✅
   test('#instanceOf, #notInstanceOf', function () {
     assert.notInstanceOf(myCar, Plane);
     assert.instanceOf(airlinePlane, Plane);
@@ -182,4 +182,3 @@ suite('Objects', function () {
     assert.notInstanceOf(myCar.wheels, String);
   });
 });
-
