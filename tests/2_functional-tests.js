@@ -35,10 +35,11 @@ suite('Functional Tests', function () {
         });
     });
 
-    // #3
+    // #3 
     test('Send {surname: "Colombo"}', function (done) {
       chai
         .request(server)
+        .keepOpen()
         .put('/travellers')
         .send({ surname: 'Colombo' })
         .end(function (err, res) {
@@ -54,6 +55,7 @@ suite('Functional Tests', function () {
     test('Send {surname: "da Verrazzano"}', function (done) {
       chai
         .request(server)
+        .keepOpen()
         .put('/travellers')
         .send({ surname: 'da Verrazzano' })
         .end(function (err, res) {
@@ -64,6 +66,7 @@ suite('Functional Tests', function () {
           done();
         });
     });
+
   });
 });
 
@@ -87,6 +90,7 @@ suite('Functional Tests with Zombie.js', function () {
     test('should have a working "site" property', function () {
       assert.isOk(browser.site);
     });
+
   });
 
   suite('"Famous Italian Explorers" form', function () {
@@ -110,5 +114,6 @@ suite('Functional Tests with Zombie.js', function () {
         done();
       });
     });
+
   });
 });
