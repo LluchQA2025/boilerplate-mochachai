@@ -118,14 +118,14 @@ const formatPeople = function (name, age) {
 };
 
 suite('Strings', function () {
-  // #13 ✅
+  // #13
   test('#isString, #isNotString', function () {
     assert.isNotString(Math.sin(Math.PI / 4), 'A float is not a string');
     assert.isString(process.env.PATH, 'An env variable is a string (or undefined)');
     assert.isString(JSON.stringify({ type: 'object' }), 'JSON is a string');
   });
 
-  // #14
+  // #14 ✅
   test('String #include, #notInclude', function () {
     assert.include('Arrow', 'row', "'Arrow' contains 'row'");
     assert.notInclude('dart', 'queue', "But 'dart' doesn't contain 'queue'");
