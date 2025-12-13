@@ -7,7 +7,6 @@ const cors = require('cors');
 const runner = require('./test-runner');
 const bodyParser = require('body-parser');
 
-// ✅ CORS robusto para freeCodeCamp (incluye preflight OPTIONS)
 app.use(cors({
   origin: '*',
   methods: ['GET', 'POST', 'PUT', 'OPTIONS'],
@@ -15,7 +14,6 @@ app.use(cors({
   optionsSuccessStatus: 200
 }));
 
-// ✅ Responder preflight para cualquier ruta
 app.options('*', cors());
 
 app.use(bodyParser.json());
@@ -32,50 +30,54 @@ app.get('/hello', function (req, res) {
   res.type('txt').send('hello ' + name);
 });
 
-const travellers = function (req, res) {
-  let data = {};
-  if (req.body && req.body.surname) {
-    switch (req.body.surname.toLowerCase()) {
-      case 'polo':
-        data = {
-          name: 'Marco',
-          surname: 'Polo',
-          dates: '1254 - 1324'
-        };
-        break;
-      case 'colombo':
-        data = {
-          name: 'Cristoforo',
-          surname: 'Colombo',
-          dates: '1451 - 1506'
-        };
-        break;
-      case 'vespucci':
-        data = {
-          name: 'Amerigo',
-          surname: 'Vespucci',
-          dates: '1454 - 1512'
-        };
-        break;
-      case 'da verrazzano':
-      case 'verrazzano':
-        data = {
-          name: 'Giovanni',
-          surname: 'da Verrazzano',
-          dates: '1485 - 1528'
-        };
-        break;
-      default:
-        data = {
-          name: 'unknown'
-        };
-    }
-  }
-  res.json(data);
-};
+/* ===================================================== */
 
-app.route('/travellers')
-  .put(travellers);
+app.put('/travellers', function (req, res) {
+  const surname = req.body && req.body.surname
+    ? req.body.surname.toLowerCase()
+    : '';
+
+  let data = {};
+
+  switch (surname) {
+    case 'polo':
+      data = {
+        name: 'Marco',
+        surname: 'Polo',
+        dates: '1254 - 1324'
+      };
+      break;
+    case 'colombo':
+      data = {
+        name: 'Cristoforo',
+        surname: 'Colombo',
+        dates: '1451 - 1506'
+      };
+      break;
+    case 'vespucci':
+      data = {
+        name: 'Amerigo',
+        surname: 'Vespucci',
+        dates: '1454 - 1512'
+      };
+      break;
+    case 'da verrazzano':
+    case 'verrazzano':
+      data = {
+        name: 'Giovanni',
+        surname: 'da Verrazzano',
+        dates: '1485 - 1528'
+      };
+      break;
+    default:
+      data = { name: 'unknown' };
+  }
+
+  // ✅ ESTA LÍNEA ES LA CLAVE PARA FCC
+  res.status(200).json(data);
+});
+
+/* ===================================================== */
 
 let error;
 
@@ -89,7 +91,9 @@ function (req, res, next) {
 },
 function (req, res) {
   runner.on('done', function () {
-    process.nextTick(() => res.json(testFilter(runner.report, req.query.type, req.query.n)));
+    process.nextTick(() =>
+      res.json(testFilter(runner.report, req.query.type, req.query.n))
+    );
   });
 });
 
