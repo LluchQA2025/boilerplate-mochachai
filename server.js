@@ -41,7 +41,7 @@ app.put('/travellers', function (req, res) {
     surname = req.body.surname;
   }
 
-  // Caso FCC/curl sin header: bodyParser.urlencoded puede dejarlo como:
+  // Caso: bodyParser.urlencoded puede dejarlo como:
   // { '{"surname":"Colombo"}': '' }
   if (!surname && req.body && typeof req.body === 'object') {
     const keys = Object.keys(req.body);
@@ -89,10 +89,12 @@ app.put('/travellers', function (req, res) {
     }
   }
 
-  // 3) CLAVE: Content-Type EXACTO (sin charset)
+  // 3) CLAVE: Content-Type EXACTO (SIN charset) + enviar como Buffer
+  const payload = Buffer.from(JSON.stringify(data));
+
   res.status(200);
-  res.set('Content-Type', 'application/json');
-  return res.send(JSON.stringify(data));
+  res.setHeader('Content-Type', 'application/json');
+  return res.send(payload);
 });
 
 let error;
