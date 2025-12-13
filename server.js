@@ -5,7 +5,7 @@ const app = express();
 const cors = require('cors');
 const runner = require('./test-runner');
 
-// ⚠️ IMPORTANTE: aceptar body SIN Content-Type
+// ⚠️ FCC: aceptar body con o SIN Content-Type
 app.use(express.text({ type: '*/*' }));
 app.use(express.json({ type: '*/*' }));
 
@@ -25,11 +25,11 @@ app.get('/hello', function (req, res) {
   res.type('txt').send('hello ' + name);
 });
 
-// PUT /travellers — FCC FIX REAL
+// ✅ PUT /travellers — FIX FINAL FCC
 app.put('/travellers', function (req, res) {
   let body = req.body;
 
-  // Si viene como string (SIN header), lo parseamos
+  // Si el body viene como string (sin header), parsear manualmente
   if (typeof body === 'string') {
     try {
       body = JSON.parse(body);
@@ -41,7 +41,7 @@ app.put('/travellers', function (req, res) {
   let data = { name: 'unknown' };
 
   if (body && body.surname) {
-    switch (body.surname.toLowerCase()) {
+    switch (String(body.surname).toLowerCase()) {
       case 'polo':
         data = { name: 'Marco', surname: 'Polo', dates: '1254 - 1324' };
         break;
@@ -58,10 +58,11 @@ app.put('/travellers', function (req, res) {
     }
   }
 
-  // ⚠️ FCC exige EXACTO application/json
-  res.status(200);
-  res.set('Content-Type', 'application/json');
-  res.send(Buffer.from(JSON.stringify(data)));
+  // ⚠️ FCC exige EXACTO: application/json (sin charset)
+  const payload = Buffer.from(JSON.stringify(data));
+  res.statusCode = 200;
+  res.setHeader('Content-Type', 'application/json');
+  res.end(payload);
 });
 
 // FCC test endpoint
