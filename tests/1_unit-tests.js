@@ -104,7 +104,7 @@ suite('Arrays', function () {
     assert.isNotArray([1, 2, 3].indexOf(2), 'indexOf returns a number');
   });
 
-  // #12 ✅ ESTE ES EL CHALLENGE
+  // #12
   test('Array #include, #notInclude', function () {
     assert.notInclude(winterMonths, 'jul', "It's summer in july...");
     assert.include(backendLanguages, 'javascript', 'JS is a backend language');
@@ -118,7 +118,7 @@ const formatPeople = function (name, age) {
 };
 
 suite('Strings', function () {
-  // #13
+  // #13 ✅
   test('#isString, #isNotString', function () {
     assert.isNotString(Math.sin(Math.PI / 4), 'A float is not a string');
     assert.isString(process.env.PATH, 'An env variable is a string (or undefined)');
