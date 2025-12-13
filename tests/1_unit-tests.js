@@ -24,7 +24,7 @@ suite('Unit Tests', function () {
       assert.isOk(true, 'true is truthy');
     });
 
-    // #4
+  // #4
     test('#isTrue, #isNotTrue', function () {
       assert.isTrue(true, 'true is true');
       assert.isTrue(!!'double negation', 'Double negation of a truthy value is true');
