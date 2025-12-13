@@ -7,28 +7,22 @@ const cors = require('cors');
 const runner = require('./test-runner');
 const bodyParser = require('body-parser');
 
-// CORS (FCC compatible)
 app.use(cors());
-
-// Body parsers
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-// Home
 app.get('/', function (req, res) {
   res.sendFile(__dirname + '/views/index.html');
 });
 
-// Static files
 app.use(express.static(__dirname + '/public'));
 
-// GET /hello
 app.get('/hello', function (req, res) {
   const name = req.query.name || 'Guest';
-  res.send('hello ' + name);
+  res.type('txt').send('hello ' + name);
 });
 
-// PUT /travellers  ✅ FCC EXACT EXPECTATION
+/* ===== FCC CRITICAL FIX ===== */
 app.put('/travellers', function (req, res) {
   let data = { name: 'unknown' };
 
@@ -50,13 +44,14 @@ app.put('/travellers', function (req, res) {
     }
   }
 
-  // 🚨 NO type(), NO stringify(), SOLO json()
-  res.status(200).json(data);
+  res.status(200);
+  res.set('Content-Type', 'application/json');
+  res.send(data); // 👈 NO res.json()
 });
+/* ============================ */
 
 let error;
 
-// FCC test endpoint
 app.get(
   '/_api/get-tests',
   cors(),
@@ -77,7 +72,6 @@ app.get(
   }
 );
 
-// Server start
 const port = process.env.PORT || 3000;
 app.listen(port, function () {
   console.log('Listening on port ' + port);
@@ -95,7 +89,6 @@ app.listen(port, function () {
 
 module.exports = app;
 
-// Helper
 function testFilter(tests, type, n) {
   let out;
 
