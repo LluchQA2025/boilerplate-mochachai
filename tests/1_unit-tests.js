@@ -48,14 +48,17 @@ suite('Unit Tests', function () {
 
   // #6
   test('#strictEqual, #notStrictEqual', function () {
-    assert.fail();
+    assert.notStrictEqual(6, '6', '6 is not strictly equal to "6"');
+    assert.strictEqual(6, 6, '6 is strictly equal to 6');
+    assert.notStrictEqual(6, 3, '6 is not strictly equal to 3');
   });
 
   // #7
   test('#deepEqual, #notDeepEqual', function () {
-    assert.fail();
+    assert.deepEqual({ value: '1' }, { value: '1' }, 'Objects are deeply equal');
+    assert.notDeepEqual({ value: 1 }, { value: '1' }, 'Objects are not deeply equal');
+    assert.notDeepEqual([1, 2, 3], [1, 2, 4], 'Arrays are not deeply equal');
   });
-
 });
 
   // -----------------------------------------------------------------------------
