@@ -2,84 +2,68 @@
 
 const express = require('express');
 const bodyParser = require('body-parser');
-const helmet = require('helmet');
 const cors = require('cors');
+
+const runner = require('./test-runner');
 
 const app = express();
 
-/* ======================
-   Middleware
-====================== */
-app.use(helmet());
-app.use(cors({ origin: '*' }));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
+
 app.use(express.static('public'));
 
-/* ======================
-   FCC: get-tests endpoint
-   ⚠️ FCC espera LOS ÚLTIMOS n TESTS FUNCIONALES
-====================== */
-app.get('/_api/get-tests', (req, res) => {
+// Helper: devuelve el HTML con spans llenos (Zombie-friendly)
+function renderHomePage(name = '', surname = '') {
+  return `
+    <!doctype html>
+    <html>
+      <head>
+        <meta charset="utf-8">
+        <title>Automated Testing</title>
+      </head>
+      <body>
+        <h1>Automated Testing</h1>
 
-  const allTests = [
-    {
-      title: 'Test GET /hello with no name',
-      context: ' -> Functional Tests -> Integration tests with chai-http',
-      state: 'passed',
-      assertions: [
-        { method: 'equal', args: 'res.status, 200' },
-        { method: 'equal', args: "res.text, 'hello Guest'" }
-      ]
-    },
-    {
-      title: 'Test GET /hello with your name',
-      context: ' -> Functional Tests -> Integration tests with chai-http',
-      state: 'passed',
-      assertions: [
-        { method: 'equal', args: 'res.status, 200' },
-        { method: 'equal', args: "res.text, 'hello xy_z'" }
-      ]
-    },
-    {
-      title: 'Send {surname: "Colombo"}',
-      context: ' -> Functional Tests -> Integration tests with chai-http',
-      state: 'passed',
-      assertions: [
-        { method: 'equal', args: 'res.status, 200' },
-        { method: 'equal', args: "res.type, 'application/json'" },
-        { method: 'equal', args: "res.body.name, 'Cristoforo'" },
-        { method: 'equal', args: "res.body.surname, 'Colombo'" }
-      ]
-    },
-    {
-      title: 'Send {surname: "da Verrazzano"}',
-      context: ' -> Functional Tests -> Integration tests with chai-http',
-      state: 'passed',
-      assertions: [
-        { method: 'equal', args: 'res.status, 200' },
-        { method: 'equal', args: "res.type, 'application/json'" },
-        { method: 'equal', args: "res.body.name, 'Giovanni'" },
-        { method: 'equal', args: "res.body.surname, 'da Verrazzano'" }
-      ]
-    }
-  ];
+        <form action="/travellers" method="post">
+          <input name="surname" placeholder="surname" />
+          <button id="submit" type="submit">submit</button>
+        </form>
 
-  const n = parseInt(req.query.n, 10);
+        <p>Name: <span id="name">${name || ''}</span></p>
+        <p>Surname: <span id="surname">${surname || ''}</span></p>
+      </body>
+    </html>
+  `;
+}
 
-  // 🔑 CLAVE DEL CHALLENGE
-  // FCC quiere LOS ÚLTIMOS n TESTS
-  const tests =
-    Number.isInteger(n) && n > 0
-      ? allTests.slice(-n)
-      : allTests;
-
-  res.json({ tests });
+// HOME: Zombie visita "/" y debe devolver 200 + HTML con form y spans
+app.get('/', (req, res) => {
+  res.status(200).send(renderHomePage());
 });
 
-/* ======================
-   Routes reales
-====================== */
+// --- FCC get-tests endpoint (boilerplate-style) ---
+function testFilter(tests, type, n) {
+  let out = tests;
+  if (type && type !== 'all') {
+    out = out.filter(t => t.context && t.context.match(type));
+  }
+  if (n !== undefined) {
+    return out[n] || out; // n es index 0-based en el boilerplate
+  }
+  return out;
+}
+
+app.get('/_api/get-tests', cors(), (req, res) => {
+  const type = req.query.type;
+  const n = req.query.n;
+
+  if (!runner.report) {
+    runner.on('done', () => res.json(testFilter(runner.report, type, n)));
+  } else {
+    res.json(testFilter(runner.report, type, n));
+  }
+});
 
 // GET /hello
 app.get('/hello', (req, res) => {
@@ -87,23 +71,39 @@ app.get('/hello', (req, res) => {
   res.send(`hello ${name}`);
 });
 
-// PUT /travellers
+// Helper para mapear apellidos
+function getExplorerBySurname(rawSurname) {
+  const raw = rawSurname ? String(rawSurname) : '';
+  const s = raw.trim().toLowerCase();
+
+  if (s === 'colombo') return { name: 'Cristoforo', surname: 'Colombo' };
+  if (s === 'vespucci') return { name: 'Amerigo', surname: 'Vespucci' };
+  if (s === 'da verrazzano') return { name: 'Giovanni', surname: 'da Verrazzano' };
+
+  // fallback
+  return { name: '', surname: raw.trim() };
+}
+
+// PUT /travellers (chai-http tests)
 app.put('/travellers', (req, res) => {
-  const surname = req.body.surname;
-
-  let name = '';
-  if (surname === 'Colombo') name = 'Cristoforo';
-  else if (surname === 'Vespucci') name = 'Amerigo';
-  else if (surname === 'da Verrazzano') name = 'Giovanni';
-
-  res.json({ name, surname });
+  const result = getExplorerBySurname(req.body && req.body.surname);
+  res.json(result);
 });
 
-/* ======================
-   Start server
-====================== */
-const listener = app.listen(process.env.PORT || 3000, () => {
-  console.log('Listening on port ' + listener.address().port);
+// POST /travellers (Zombie form: devuelve HTML con spans llenos)
+app.post('/travellers', (req, res) => {
+  const result = getExplorerBySurname(req.body && req.body.surname);
+  res.status(200).send(renderHomePage(result.name, result.surname));
+});
+
+// Start server + run tests
+const port = process.env.PORT || 3000;
+const server = app.listen(port, () => {
+  console.log('Listening on port ' + port);
+  setTimeout(() => {
+    console.log('Running Tests...');
+    runner.run();
+  }, 1500);
 });
 
 module.exports = app;
