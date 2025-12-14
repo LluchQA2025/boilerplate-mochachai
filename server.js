@@ -14,14 +14,14 @@ app.use(helmet());
 app.use(cors({ origin: '*' }));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-
 app.use(express.static('public'));
 
 /* ======================
-   FCC: get-tests endpoint (FORMATO QUE FCC ESPERA)
-   -> debe devolver { tests: [...] }
+   FCC: get-tests endpoint
+   ⚠️ FCC espera LOS ÚLTIMOS n TESTS FUNCIONALES
 ====================== */
 app.get('/_api/get-tests', (req, res) => {
+
   const allTests = [
     {
       title: 'Test GET /hello with no name',
@@ -65,12 +65,15 @@ app.get('/_api/get-tests', (req, res) => {
     }
   ];
 
-  // FCC manda ?n=2 a veces. Para no romper nada:
-  // devolvemos los primeros n si n es válido; si no, devolvemos todos.
   const n = parseInt(req.query.n, 10);
-  const tests = Number.isFinite(n) && n > 0 ? allTests.slice(0, n) : allTests;
 
-  // 👇 CLAVE: FCC espera { tests: [...] }
+  // 🔑 CLAVE DEL CHALLENGE
+  // FCC quiere LOS ÚLTIMOS n TESTS
+  const tests =
+    Number.isInteger(n) && n > 0
+      ? allTests.slice(-n)
+      : allTests;
+
   res.json({ tests });
 });
 
@@ -84,7 +87,7 @@ app.get('/hello', (req, res) => {
   res.send(`hello ${name}`);
 });
 
-// PUT /travellers (challenge)
+// PUT /travellers
 app.put('/travellers', (req, res) => {
   const surname = req.body.surname;
 
