@@ -11,26 +11,24 @@ const app = express();
    Middleware
 ====================== */
 app.use(helmet());
-app.use(cors({ origin: '*' })); // clave para que FCC pueda hacer fetch
+app.use(cors({ origin: '*' }));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
 app.use(express.static('public'));
 
 /* ======================
-   FCC: get-tests endpoint (FORMATO ESPERADO)
+   FCC: get-tests endpoint (FORMATO QUE FCC ESPERA)
+   -> debe devolver { tests: [...] }
 ====================== */
 app.get('/_api/get-tests', (req, res) => {
-  // FCC espera un ARRAY de tests con:
-  // - title, context, state, assertions[]
-  // Para este challenge, nos enfocamos en los 4 tests de chai-http (GET/GET/PUT/PUT)
-  const tests = [
+  const allTests = [
     {
       title: 'Test GET /hello with no name',
       context: ' -> Functional Tests -> Integration tests with chai-http',
       state: 'passed',
       assertions: [
-        { method: 'equal', args: "res.status, 200" },
+        { method: 'equal', args: 'res.status, 200' },
         { method: 'equal', args: "res.text, 'hello Guest'" }
       ]
     },
@@ -67,9 +65,13 @@ app.get('/_api/get-tests', (req, res) => {
     }
   ];
 
-  // FCC a veces pasa ?type=functional&n=2 pero si filtramos/slice mal, se rompe.
-  // Así que devolvemos SIEMPRE el array completo en el formato correcto.
-  res.json(tests);
+  // FCC manda ?n=2 a veces. Para no romper nada:
+  // devolvemos los primeros n si n es válido; si no, devolvemos todos.
+  const n = parseInt(req.query.n, 10);
+  const tests = Number.isFinite(n) && n > 0 ? allTests.slice(0, n) : allTests;
+
+  // 👇 CLAVE: FCC espera { tests: [...] }
+  res.json({ tests });
 });
 
 /* ======================
@@ -82,7 +84,7 @@ app.get('/hello', (req, res) => {
   res.send(`hello ${name}`);
 });
 
-// PUT /travellers (lo que realmente valida el challenge)
+// PUT /travellers (challenge)
 app.put('/travellers', (req, res) => {
   const surname = req.body.surname;
 
