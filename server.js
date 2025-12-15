@@ -3,30 +3,27 @@
 const express = require('express');
 const cors = require('cors');
 
-const runner = require('./test-runner');
-
 const app = express();
 
-// Middleware
+// ✅ CORS explícito (clave para FCC)
 app.use(cors());
+app.options('*', cors());
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Static files
-app.use('/public', express.static(process.cwd() + '/public'));
-
 // Home page
-app.get('/', function (req, res) {
+app.get('/', (req, res) => {
   res.sendFile(process.cwd() + '/views/index.html');
 });
 
-// Required for chai-http tests
-app.get('/hello', function (req, res) {
+// Required for FCC / chai-http
+app.get('/hello', (req, res) => {
   const name = req.query.name || 'Guest';
   res.type('text').send(`hello ${name}`);
 });
 
-// Data source
+// Data
 function getTravellerBySurname(surname) {
   const data = {
     Colombo: { name: 'Cristoforo', surname: 'Colombo', dates: '1451 - 1506' },
@@ -37,53 +34,47 @@ function getTravellerBySurname(surname) {
   return data[surname] || { name: '', surname: '', dates: '' };
 }
 
-// POST for Zombie.js (HTML form)
-app.post('/travellers', function (req, res) {
+// ✅ POST for Zombie.js
+app.post('/travellers', (req, res) => {
   const surname = req.body.surname || '';
-  const result = getTravellerBySurname(surname);
+  const r = getTravellerBySurname(surname);
 
-  res.type('html').send(`
-    <!DOCTYPE html>
-    <html lang="en">
-      <head>
-        <meta charset="UTF-8" />
-        <title>Famous Italian Explorers</title>
-      </head>
+  res.send(`
+    <html>
       <body>
         <h1>Famous Italian Explorers</h1>
-
         <form action="/travellers" method="POST">
-          <label for="surname-input">Surname:</label>
-          <input id="surname-input" name="surname" type="text" />
-          <input id="submit" name="submit" type="submit" value="submit" />
+          <input id="surname-input" name="surname" />
+          <input id="submit" type="submit" value="submit" />
         </form>
-
-        <hr />
-
-        <h2>Result</h2>
-        <p>Name: <span id="name">${result.name}</span></p>
-        <p>Surname: <span id="surname">${result.surname}</span></p>
-        <p>Dates: <span id="dates">${result.dates}</span></p>
+        <p>Name: <span id="name">${r.name}</span></p>
+        <p>Surname: <span id="surname">${r.surname}</span></p>
+        <p>Dates: <span id="dates">${r.dates}</span></p>
       </body>
     </html>
   `);
 });
 
-// PUT for chai-http
-app.put('/travellers', function (req, res) {
+// ✅ PUT for freeCodeCamp (CRÍTICO)
+app.put('/travellers', (req, res) => {
   const surname = req.body.surname || '';
   const result = getTravellerBySurname(surname);
-  res.json(result);
+
+  res
+    .status(200)
+    .type('application/json')
+    .json(result);
 });
 
-// FCC endpoint (array plano)
-app.get('/_api/get-tests', function (req, res) {
+// FCC evaluator endpoint
+const runner = require('./test-runner');
+app.get('/_api/get-tests', (req, res) => {
   res.set('Cache-Control', 'no-store');
   runner.run();
-  runner.once('done', (tests) => res.json(tests));
+  runner.once('done', tests => res.json(tests));
 });
 
-// Start server
+// Start
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log('Listening on port ' + PORT);
