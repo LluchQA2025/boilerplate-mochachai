@@ -1,65 +1,50 @@
 'use strict';
 
-const EventEmitter = require('events').EventEmitter;
 const Mocha = require('mocha');
+const fs = require('fs');
 const path = require('path');
 
-const emitter = new EventEmitter();
-
-/**
- * Regla FCC:
- * - Functional tests: fullTitle empieza con "Functional Tests"
- * - Unit tests: todo lo demás
- * 
- * Nota: NO asumimos que fullTitle siempre sea string; lo convertimos con String().
- */
-function applyFilter(allTests, query = {}) {
-  const type = String(query.type || '').toLowerCase();
-  const n = String(query.n || '').trim();
-
-  if (type === 'functional' && n === '2') {
-    return allTests.filter(t => String(t.fullTitle || '').startsWith('Functional Tests'));
-  }
-
-  if (type === 'unit' && n === '1') {
-    return allTests.filter(t => !String(t.fullTitle || '').startsWith('Functional Tests'));
-  }
-
-  return allTests;
-}
-
-emitter.run = function run(query = {}) {
+function runTests(callback) {
+  // ✅ Crear una nueva instancia de Mocha en cada ejecución
+  // para evitar: "already running" / "already disposed"
   const mocha = new Mocha({ ui: 'tdd' });
+  const testDir = path.join(__dirname, 'tests');
 
-  mocha.addFile(path.join(__dirname, 'tests', '1_unit-tests.js'));
-  mocha.addFile(path.join(__dirname, 'tests', '2_functional-tests.js'));
+  fs.readdirSync(testDir)
+    .filter((file) => file.endsWith('.js'))
+    .forEach((file) => {
+      mocha.addFile(path.join(testDir, file));
+    });
 
-  const rawTests = [];
-  let context = '';
-  const sep = ' -> ';
+  const results = [];
+  const failMap = new Map();
 
-  const runner = mocha.run();
+  let runner;
+  try {
+    runner = mocha.run();
+  } catch (e) {
+    return callback(e);
+  }
 
   runner
-    .on('suite', (s) => {
-      if (s && s.title) context += (s.title + sep);
+    .on('fail', function (test, err) {
+      // Guardamos el error para agregarlo al reporte final
+      failMap.set(test.fullTitle(), (err && err.message) ? err.message : String(err));
     })
-    .on('suite end', (s) => {
-      if (s && s.title) context = context.slice(0, -(s.title.length + sep.length));
-    })
-    .on('test end', (test) => {
-      rawTests.push({
+    .on('test end', function (test) {
+      const fullTitle = typeof test.fullTitle === 'function' ? test.fullTitle() : test.title;
+
+      results.push({
         title: test.title,
-        context: context.slice(0, -sep.length),
-        fullTitle: typeof test.fullTitle === 'function' ? test.fullTitle() : '',
-        state: test.state || 'failed',
-        err: test.err ? String(test.err.message || test.err) : undefined
+        context: (test.parent && test.parent.title) ? test.parent.title : '',
+        fullTitle,
+        state: test.state || 'unknown',
+        err: failMap.get(fullTitle) || undefined
       });
     })
-    .on('end', () => {
-      const filtered = applyFilter(rawTests, query);
-      emitter.emit('done', filtered);
+    .on('end', function () {
+      callback(null, results);
     });
-};
+}
 
-module.exports = emitter;
+module.exports = { runTests };
