@@ -1,75 +1,65 @@
 'use strict';
 
-const mocha = require('mocha');
+const EventEmitter = require('events').EventEmitter;
+const Mocha = require('mocha');
 const path = require('path');
-const EventEmitter = require('events');
-
-const Mocha = mocha;
-const testDir = path.join(__dirname, 'tests');
 
 const emitter = new EventEmitter();
 
-let running = false;
+/**
+ * Regla FCC:
+ * - Functional tests: fullTitle empieza con "Functional Tests"
+ * - Unit tests: todo lo demás
+ * 
+ * Nota: NO asumimos que fullTitle siempre sea string; lo convertimos con String().
+ */
+function applyFilter(allTests, query = {}) {
+  const type = String(query.type || '').toLowerCase();
+  const n = String(query.n || '').trim();
 
-emitter.run = function () {
-  // Si ya hay una corrida en curso, NO iniciar otra.
-  // Los requests que lleguen se quedarán esperando el mismo evento 'done'.
-  if (running) return;
-
-  running = true;
-
-  const mochaInstance = new Mocha({
-    ui: 'tdd'
-  });
-
-  // Cargar tests unit y funcional
-  mochaInstance.addFile(path.join(testDir, '1_unit-tests.js'));
-  mochaInstance.addFile(path.join(testDir, '2_functional-tests.js'));
-
-  const tests = [];
-
-  let runner;
-  try {
-    // ✅ CORRER UNA SOLA VEZ
-    runner = mochaInstance.run();
-  } catch (e) {
-    running = false;
-    emitter.emit('done', [
-      {
-        title: 'Mocha error',
-        context: 'Runner',
-        fullTitle: 'Runner Mocha error',
-        state: 'failed',
-        err: e.message
-      }
-    ]);
-    return;
+  if (type === 'functional' && n === '2') {
+    return allTests.filter(t => String(t.fullTitle || '').startsWith('Functional Tests'));
   }
 
-  runner.on('pass', function (test) {
-    tests.push({
-      title: test.title,
-      context: test.parent && test.parent.title ? test.parent.title : '',
-      fullTitle: test.fullTitle(),
-      state: 'passed'
-    });
-  });
+  if (type === 'unit' && n === '1') {
+    return allTests.filter(t => !String(t.fullTitle || '').startsWith('Functional Tests'));
+  }
 
-  runner.on('fail', function (test, err) {
-    tests.push({
-      title: test.title,
-      context: test.parent && test.parent.title ? test.parent.title : '',
-      fullTitle: test.fullTitle(),
-      state: 'failed',
-      err: err && err.message ? err.message : ''
-    });
-  });
+  return allTests;
+}
 
-  runner.on('end', function () {
-    running = false;
-    emitter.emit('done', tests);
-  });
+emitter.run = function run(query = {}) {
+  const mocha = new Mocha({ ui: 'tdd' });
+
+  mocha.addFile(path.join(__dirname, 'tests', '1_unit-tests.js'));
+  mocha.addFile(path.join(__dirname, 'tests', '2_functional-tests.js'));
+
+  const rawTests = [];
+  let context = '';
+  const sep = ' -> ';
+
+  const runner = mocha.run();
+
+  runner
+    .on('suite', (s) => {
+      if (s && s.title) context += (s.title + sep);
+    })
+    .on('suite end', (s) => {
+      if (s && s.title) context = context.slice(0, -(s.title.length + sep.length));
+    })
+    .on('test end', (test) => {
+      rawTests.push({
+        title: test.title,
+        context: context.slice(0, -sep.length),
+        fullTitle: typeof test.fullTitle === 'function' ? test.fullTitle() : '',
+        state: test.state || 'failed',
+        err: test.err ? String(test.err.message || test.err) : undefined
+      });
+    })
+    .on('end', () => {
+      const filtered = applyFilter(rawTests, query);
+      emitter.emit('done', filtered);
+    });
 };
 
 module.exports = emitter;
-

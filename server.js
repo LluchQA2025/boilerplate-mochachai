@@ -3,9 +3,11 @@
 const express = require('express');
 const cors = require('cors');
 
+const runner = require('./test-runner');
+
 const app = express();
 
-// ✅ CORS explícito (clave para FCC)
+// ✅ CORS (clave para FCC)
 app.use(cors());
 app.options('*', cors());
 
@@ -34,7 +36,7 @@ function getTravellerBySurname(surname) {
   return data[surname] || { name: '', surname: '', dates: '' };
 }
 
-// ✅ POST for Zombie.js
+// POST for Zombie.js
 app.post('/travellers', (req, res) => {
   const surname = req.body.surname || '';
   const r = getTravellerBySurname(surname);
@@ -44,9 +46,12 @@ app.post('/travellers', (req, res) => {
       <body>
         <h1>Famous Italian Explorers</h1>
         <form action="/travellers" method="POST">
+          <label for="surname-input">Surname:</label>
           <input id="surname-input" name="surname" />
-          <input id="submit" type="submit" value="submit" />
+          <input id="submit" name="submit" type="submit" value="submit" />
         </form>
+        <hr />
+        <h2>Result</h2>
         <p>Name: <span id="name">${r.name}</span></p>
         <p>Surname: <span id="surname">${r.surname}</span></p>
         <p>Dates: <span id="dates">${r.dates}</span></p>
@@ -55,7 +60,7 @@ app.post('/travellers', (req, res) => {
   `);
 });
 
-// ✅ PUT for freeCodeCamp (CRÍTICO)
+// PUT for freeCodeCamp
 app.put('/travellers', (req, res) => {
   const surname = req.body.surname || '';
   const result = getTravellerBySurname(surname);
@@ -66,12 +71,11 @@ app.put('/travellers', (req, res) => {
     .json(result);
 });
 
-// FCC evaluator endpoint
-const runner = require('./test-runner');
+// ✅ FCC / get-tests (array plano + soporta filtros)
 app.get('/_api/get-tests', (req, res) => {
   res.set('Cache-Control', 'no-store');
-  runner.run();
-  runner.once('done', tests => res.json(tests));
+  runner.run(req.query);
+  runner.once('done', (tests) => res.json(tests));
 });
 
 // Start
