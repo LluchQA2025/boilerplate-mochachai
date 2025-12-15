@@ -1,79 +1,75 @@
-const analyser = require('./assertion-analyser');
-const EventEmitter = require('events').EventEmitter;
+'use strict';
 
-const Mocha = require('mocha'),
-    fs = require('fs'),
-    path = require('path');
+const mocha = require('mocha');
+const path = require('path');
+const EventEmitter = require('events');
 
-const mocha = new Mocha();
-const testDir = './tests'
-
-
-// Add each .js file to the mocha instance
-fs.readdirSync(testDir).filter(function (file) {
-    // Only keep the .js files
-    return file.substr(-3) === '.js';
-
-}).forEach(function (file) {
-    mocha.addFile(
-        path.join(testDir, file)
-    );
-});
+const Mocha = mocha;
+const testDir = path.join(__dirname, 'tests');
 
 const emitter = new EventEmitter();
+
+let running = false;
+
 emitter.run = function () {
+  // Si ya hay una corrida en curso, NO iniciar otra.
+  // Los requests que lleguen se quedarán esperando el mismo evento 'done'.
+  if (running) return;
 
-    const tests = [];
-    let context = "";
-    const separator = ' -> ';
-    // Run the tests.
-    try {
-        const runner = mocha.ui('tdd').run()
-            .on('test end', function (test) {
-                // remove comments
-                let body = test.body.replace(/\/\/.*\n|\/\*.*\*\//g, '');
-                // collapse spaces
-                body = body.replace(/\s+/g, ' ');
-                const obj = {
-                    title: test.title,
-                    context: context.slice(0, -separator.length),
-                    state: test.state,
-                    // body: body,
-                    assertions: analyser(body)
-                };
-                tests.push(obj);
-            })
-            .on('end', function () {
-                emitter.report = tests;
-                emitter.emit('done', tests)
-            })
-            .on('suite', function (s) {
-                context += (s.title + separator);
+  running = true;
 
-            })
-            .on('suite end', function (s) {
-                context = context.slice(0, -(s.title.length + separator.length))
-            })
-    } catch (e) {
-        throw (e);
-    }
+  const mochaInstance = new Mocha({
+    ui: 'tdd'
+  });
+
+  // Cargar tests unit y funcional
+  mochaInstance.addFile(path.join(testDir, '1_unit-tests.js'));
+  mochaInstance.addFile(path.join(testDir, '2_functional-tests.js'));
+
+  const tests = [];
+
+  let runner;
+  try {
+    // ✅ CORRER UNA SOLA VEZ
+    runner = mochaInstance.run();
+  } catch (e) {
+    running = false;
+    emitter.emit('done', [
+      {
+        title: 'Mocha error',
+        context: 'Runner',
+        fullTitle: 'Runner Mocha error',
+        state: 'failed',
+        err: e.message
+      }
+    ]);
+    return;
+  }
+
+  runner.on('pass', function (test) {
+    tests.push({
+      title: test.title,
+      context: test.parent && test.parent.title ? test.parent.title : '',
+      fullTitle: test.fullTitle(),
+      state: 'passed'
+    });
+  });
+
+  runner.on('fail', function (test, err) {
+    tests.push({
+      title: test.title,
+      context: test.parent && test.parent.title ? test.parent.title : '',
+      fullTitle: test.fullTitle(),
+      state: 'failed',
+      err: err && err.message ? err.message : ''
+    });
+  });
+
+  runner.on('end', function () {
+    running = false;
+    emitter.emit('done', tests);
+  });
 };
 
 module.exports = emitter;
 
-/*
- * Mocha.runner Events:
- * can be used to build a better custom report
- *
- *   - `start`  execution started
- *   - `end`  execution complete
- *   - `suite`  (suite) test suite execution started
- *   - `suite end`  (suite) all tests (and sub-suites) have finished
- *   - `test`  (test) test execution started
- *   - `test end`  (test) test completed
- *   - `hook`  (hook) hook execution started
- *   - `hook end`  (hook) hook complete
- *   - `pass`  (test) test passed
- *   - `fail`  (test, err) test failed
- *   - `pending`  (test) test pending
- */
