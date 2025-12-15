@@ -4,47 +4,44 @@ const Mocha = require('mocha');
 const fs = require('fs');
 const path = require('path');
 
-function runTests(callback) {
-  // ✅ Crear una nueva instancia de Mocha en cada ejecución
-  // para evitar: "already running" / "already disposed"
-  const mocha = new Mocha({ ui: 'tdd' });
-  const testDir = path.join(__dirname, 'tests');
+const mocha = new Mocha({ timeout: 5000 });
+const testDir = path.join(__dirname, 'tests');
 
-  fs.readdirSync(testDir)
-    .filter((file) => file.endsWith('.js'))
-    .forEach((file) => {
-      mocha.addFile(path.join(testDir, file));
-    });
+fs.readdirSync(testDir)
+  .filter(file => file.endsWith('.js'))
+  .forEach(file => mocha.addFile(path.join(testDir, file)));
 
-  const results = [];
-  const failMap = new Map();
+let tests;
 
-  let runner;
-  try {
-    runner = mocha.run();
-  } catch (e) {
-    return callback(e);
-  }
-
-  runner
-    .on('fail', function (test, err) {
-      // Guardamos el error para agregarlo al reporte final
-      failMap.set(test.fullTitle(), (err && err.message) ? err.message : String(err));
-    })
-    .on('test end', function (test) {
-      const fullTitle = typeof test.fullTitle === 'function' ? test.fullTitle() : test.title;
-
-      results.push({
-        title: test.title,
-        context: (test.parent && test.parent.title) ? test.parent.title : '',
-        fullTitle,
-        state: test.state || 'unknown',
-        err: failMap.get(fullTitle) || undefined
-      });
-    })
-    .on('end', function () {
-      callback(null, results);
-    });
+function runTests() {
+  return new Promise(resolve => {
+    const results = [];
+    mocha.run()
+      .on('test end', test => {
+        results.push({
+          title: test.title,
+          context: test.parent.title,
+          fullTitle: test.fullTitle(),
+          state: test.state || 'failed',
+          err: test.err ? test.err.message : undefined
+        });
+      })
+      .on('end', () => resolve(results));
+  });
 }
 
-module.exports = { runTests };
+exports.getTests = async function (type, n) {
+  if (!tests) tests = await runTests();
+
+  let filtered = tests;
+
+  if (type === 'functional') {
+    filtered = tests.filter(t =>
+      t.fullTitle.startsWith('Functional Tests')
+    );
+  }
+
+  if (n) filtered = filtered.slice(0, n);
+
+  return filtered;
+};
