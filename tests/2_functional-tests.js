@@ -3,12 +3,10 @@ const chaiHttp = require('chai-http');
 const server = require('../server');
 
 const assert = chai.assert;
-
 chai.use(chaiHttp);
 
-suite('Functional Tests', function () {
-
-  test('Send {surname: "Colombo"}', function (done) {
+describe('Functional Tests', function () {
+  it('Send {surname: "Colombo"}', function (done) {
     chai
       .request(server)
       .put('/travellers')
@@ -22,4 +20,17 @@ suite('Functional Tests', function () {
       });
   });
 
+  it('Send {surname: "da Verrazzano"}', function (done) {
+    chai
+      .request(server)
+      .put('/travellers')
+      .send({ surname: 'da Verrazzano' })
+      .end(function (err, res) {
+        assert.equal(res.status, 200);
+        assert.equal(res.type, 'application/json');
+        assert.equal(res.body.name, 'Giovanni');
+        assert.equal(res.body.surname, 'da Verrazzano');
+        done();
+      });
+  });
 });
