@@ -11,10 +11,9 @@ app.use(express.urlencoded({ extended: true }));
 
 /* ===============================
    FREECODECAMP TEST ROUTES
-   (OBLIGATORIAS para FCC)
 ================================ */
 const fccTestingRoutes = require('./fcc-testing.js');
-fccTestingRoutes(app); // activa rutas como /_api/get-tests
+fccTestingRoutes(app);
 
 /* ===============================
    RUTA BASE
@@ -28,38 +27,37 @@ app.get('/', (req, res) => {
    PUT /travellers
 ================================ */
 app.put('/travellers', (req, res) => {
-  const { surname } = req.body;
+  const surname = req.body.surname;
+
+  let response;
 
   if (surname === 'Colombo') {
-    return res.json({
+    response = {
       name: 'Cristoforo',
       surname: 'Colombo'
-    });
-  }
-
-  if (surname === 'da Verrazzano') {
-    return res.json({
+    };
+  } else if (surname === 'da Verrazzano') {
+    response = {
       name: 'Giovanni',
       surname: 'da Verrazzano'
-    });
+    };
+  } else {
+    response = {
+      name: 'unknown',
+      surname: 'unknown'
+    };
   }
 
-  res.json({
-    name: 'unknown',
-    surname: 'unknown'
-  });
+  res
+    .status(200)
+    .type('application/json')  // 👈 ESTO ES CLAVE PARA PASAR EL TEST
+    .json(response);
 });
 
 /* ===============================
-   PUERTO (RENDER USA 10000)
+   PUERTO
 ================================ */
 const PORT = process.env.PORT || 3000;
-
 app.listen(PORT, () => {
   console.log(`🚀 Servidor escuchando en puerto ${PORT}`);
 });
-
-/* ===============================
-   EXPORTAR APP PARA TESTING
-================================ */
-module.exports = app;
