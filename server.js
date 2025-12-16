@@ -1,52 +1,50 @@
+'use strict';
+
 const express = require('express');
+const bodyParser = require('body-parser');
 const cors = require('cors');
+
 const app = express();
 
-// MIDDLEWARE
 app.use(cors({ origin: '*' }));
-app.use(express.json()); // ← IMPORTANTE para procesar JSON en el body
-app.use(express.urlencoded({ extended: true }));
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 
-// FREECODECAMP TEST ROUTES
-const fccTestingRoutes = require('./fcc-testing.js');
-fccTestingRoutes(app);
+app.use('/public', express.static(__dirname + '/public'));
 
-// RUTA BASE
-app.get('/', (req, res) => {
-  res.send('✔ Servidor en Línea y funcionando correctamente ✔');
+app.get('/', function (req, res) {
+  res.sendFile(__dirname + '/views/index.html');
 });
 
-// ENDPOINT DEL CHALLENGE
-// ======================
-app.put('/travellers', (req, res) => {
-  const surname = req.body.surname;
-  let response;
+app.get('/hello', function (req, res) {
+  const name = req.query.name || 'Guest';
+  res.send('hello ' + name);
+});
 
-  if (surname === 'Colombo') {
-    response = {
-      name: 'Cristoforo',
-      surname: 'Colombo'
-    };
-  } else if (surname === 'da Verrazzano') {
-    response = {
-      name: 'Giovanni',
-      surname: 'da Verrazzano'
-    };
-  } else {
-    response = {
-      name: 'unknown',
-      surname: 'unknown'
-    };
+// ✅ Respuesta al método PUT
+app.put('/travellers', function (req, res) {
+  let surname = req.body.surname;
+
+  let name, dates;
+  switch (surname) {
+    case 'Colombo':
+      name = 'Cristoforo';
+      dates = '1451 - 1506';
+      break;
+    case 'da Verrazzano':
+      name = 'Giovanni';
+      dates = '1485 - 1528';
+      break;
+    default:
+      name = 'unknown';
+      dates = 'unknown';
   }
 
-  res
-    .status(200)
-    .type('application/json') // ← CLAVE para pasar los tests
-    .json(response);
+  res.json({
+    name: name,
+    surname: surname,
+    dates: dates
+  });
 });
 
-// PUERTO
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`🚀 Servidor escuchando en puerto ${PORT}`);
-});
+module.exports = app;

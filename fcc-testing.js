@@ -1,15 +1,9 @@
-const cors = require('cors');
-
-function fccTestingRoutes(app) {
+module.exports = function (app) {
   app.route('/_api/get-tests')
-    .get(cors(), (req, res) => {
-      res.json([]);
+    .get((req, res) => {
+      res.json({});
+    })
+    .post((req, res) => {
+      res.json({});
     });
-
-  app.route('/_api/get-tests')
-    .post(cors(), (req, res) => {
-      res.json([]);
-    });
-}
-
-module.exports = fccTestingRoutes;
+};

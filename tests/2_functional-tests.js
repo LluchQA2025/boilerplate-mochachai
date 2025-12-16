@@ -7,7 +7,6 @@ const assert = chai.assert;
 chai.use(chaiHttp);
 
 describe('Functional Tests', function () {
-  // ✅ Test 1: GET /hello sin parámetro
   it('Test GET /hello with no name', function (done) {
     chai
       .request(server)
@@ -19,7 +18,6 @@ describe('Functional Tests', function () {
       });
   });
 
-  // ✅ Test 2: GET /hello con tu nombre
   it('Test GET /hello with your name', function (done) {
     chai
       .request(server)
@@ -31,7 +29,6 @@ describe('Functional Tests', function () {
       });
   });
 
-  // ✅ Test 3: PUT /travellers con Colombo
   it('Send {surname: "Colombo"}', function (done) {
     chai
       .request(server)
@@ -46,7 +43,6 @@ describe('Functional Tests', function () {
       });
   });
 
-  // ✅ Test 4: PUT /travellers con da Verrazzano
   it('Send {surname: "da Verrazzano"}', function (done) {
     chai
       .request(server)
