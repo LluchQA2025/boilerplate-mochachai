@@ -18,15 +18,17 @@ app.get('/', (req, res) => {
   res.sendFile(process.cwd() + '/views/index.html');
 });
 
-// Hello API
+// Hello API (🔥 AJUSTADO A FCC)
 app.get('/hello', (req, res) => {
-  const name = req.query.name || 'World';
-  res.json({ greeting: `hello ${name}` });
+  const name = req.query.name || 'Guest';
+  res.send(`hello ${name}`);
 });
 
-// Travellers PUT
+// Travellers PUT (🔥 COMPLETO)
 app.put('/travellers', (req, res) => {
-  if (req.body.surname === 'Colombo') {
+  const surname = req.body.surname;
+
+  if (surname === 'Colombo') {
     return res.json({
       name: 'Cristoforo',
       surname: 'Colombo',
@@ -34,8 +36,16 @@ app.put('/travellers', (req, res) => {
     });
   }
 
-  res.json({
-    surname: req.body.surname
+  if (surname === 'da Verrazzano') {
+    return res.json({
+      name: 'Giovanni',
+      surname: 'da Verrazzano',
+      dates: '1485 - 1528'
+    });
+  }
+
+  return res.json({
+    surname: surname
   });
 });
 
@@ -45,7 +55,8 @@ app.options('/travellers', cors());
 // Test runner (FCC internal)
 const runner = require('./test-runner');
 app.get('/_api/get-tests', (req, res) => {
-  runner.getTests(req.query.type, req.query.n)
+  runner
+    .getTests(req.query.type, req.query.n)
     .then(tests => res.json(tests))
     .catch(err => res.status(500).json(err));
 });
