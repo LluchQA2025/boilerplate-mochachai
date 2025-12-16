@@ -1,72 +1,42 @@
-'use strict';
-
 const express = require('express');
 const cors = require('cors');
-const bodyParser = require('body-parser');
-
 const app = express();
 
-app.use(cors({ origin: '*' }));
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
+// Permitir CORS para cualquier origen
+app.use(cors());
 
-// Static files
-app.use(express.static('public'));
+// Middleware para parsear datos de formularios
+app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
 
-// Root
+// Configurar puerto
+const PORT = process.env.PORT || 3000;
+
+// Endpoint base
 app.get('/', (req, res) => {
-  res.sendFile(process.cwd() + '/views/index.html');
+  res.sendFile(__dirname + '/views/index.html');
 });
 
-// Hello API (🔥 AJUSTADO A FCC)
-app.get('/hello', (req, res) => {
-  const name = req.query.name || 'Guest';
-  res.send(`hello ${name}`);
-});
-
-// Travellers PUT (🔥 COMPLETO)
+// Endpoint que espera un método PUT y devuelve un JSON específico
 app.put('/travellers', (req, res) => {
   const surname = req.body.surname;
 
+  let result;
+
   if (surname === 'Colombo') {
-    return res.json({
-      name: 'Cristoforo',
-      surname: 'Colombo',
-      dates: '1451 - 1506'
-    });
+    result = { name: 'Cristoforo', surname: 'Colombo' };
+  } else if (surname === 'da Verrazzano') {
+    result = { name: 'Giovanni', surname: 'da Verrazzano' };
+  } else {
+    result = { name: 'unknown', surname: 'unknown' };
   }
 
-  if (surname === 'da Verrazzano') {
-    return res.json({
-      name: 'Giovanni',
-      surname: 'da Verrazzano',
-      dates: '1485 - 1528'
-    });
-  }
-
-  return res.json({
-    surname: surname
-  });
+  res.json(result);
 });
 
-// CORS preflight (FCC needs this)
-app.options('/travellers', cors());
-
-// Test runner (FCC internal)
-const runner = require('./test-runner');
-app.get('/_api/get-tests', (req, res) => {
-  runner
-    .getTests(req.query.type, req.query.n)
-    .then(tests => res.json(tests))
-    .catch(err => res.status(500).json(err));
+// Iniciar servidor
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
 });
 
-// 🚨 CRITICAL FOR FCC
-const port = process.env.PORT || 3000;
-if (!module.parent) {
-  app.listen(port, () => {
-    console.log('Listening on port ' + port);
-  });
-}
-
-module.exports = app;
+module.exports = app; // Necesario para los tests
