@@ -10,16 +10,11 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 /* ===============================
-   FREECODECAMP REQUIRED ROUTES
-   (OBLIGATORIAS)
+   FREECODECAMP TEST ROUTES
+   (OBLIGATORIAS para FCC)
 ================================ */
-app.route('/_api/get-tests')
-  .get((req, res) => {
-    res.json([]);
-  })
-  .post((req, res) => {
-    res.json([]);
-  });
+const fccTestingRoutes = require('./fcc-testing.js');
+fccTestingRoutes(app); // activa rutas como /_api/get-tests
 
 /* ===============================
    RUTA BASE
@@ -33,38 +28,38 @@ app.get('/', (req, res) => {
    PUT /travellers
 ================================ */
 app.put('/travellers', (req, res) => {
-  const surname = req.body.surname;
+  const { surname } = req.body;
 
   if (surname === 'Colombo') {
-    return res.status(200).json({
+    return res.json({
       name: 'Cristoforo',
       surname: 'Colombo'
     });
   }
 
   if (surname === 'da Verrazzano') {
-    return res.status(200).json({
+    return res.json({
       name: 'Giovanni',
       surname: 'da Verrazzano'
     });
   }
 
-  return res.status(200).json({
+  res.json({
     name: 'unknown',
     surname: 'unknown'
   });
 });
 
 /* ===============================
-   PUERTO
-   Render usa PORT dinámico (10000)
+   PUERTO (RENDER USA 10000)
 ================================ */
 const PORT = process.env.PORT || 3000;
+
 app.listen(PORT, () => {
   console.log(`🚀 Servidor escuchando en puerto ${PORT}`);
 });
 
 /* ===============================
-   EXPORT (OBLIGATORIO PARA FCC)
+   EXPORTAR APP PARA TESTING
 ================================ */
 module.exports = app;
