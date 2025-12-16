@@ -2,41 +2,26 @@ const express = require('express');
 const cors = require('cors');
 const app = express();
 
-// Permitir CORS para cualquier origen
-app.use(cors());
+// Middleware CORS para permitir solicitudes de FreeCodeCamp
+app.use(cors({ origin: '*' }));
 
-// Middleware para parsear datos de formularios
-app.use(express.urlencoded({ extended: true }));
+// Middleware para analizar JSON
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-// Configurar puerto
-const PORT = process.env.PORT || 3000;
+// ✅ Activar pruebas siempre que se despliegue en Render
+const fccTestingRoutes = require('./fcc-testing.js');
+fccTestingRoutes(app); // activa rutas como /_api/get-tests
 
-// Endpoint base
+// Ruta base
 app.get('/', (req, res) => {
-  res.sendFile(__dirname + '/views/index.html');
+  res.send('✔ Servidor en línea');
 });
 
-// Endpoint que espera un método PUT y devuelve un JSON específico
-app.put('/travellers', (req, res) => {
-  const surname = req.body.surname;
-
-  let result;
-
-  if (surname === 'Colombo') {
-    result = { name: 'Cristoforo', surname: 'Colombo' };
-  } else if (surname === 'da Verrazzano') {
-    result = { name: 'Giovanni', surname: 'da Verrazzano' };
-  } else {
-    result = { name: 'unknown', surname: 'unknown' };
-  }
-
-  res.json(result);
-});
-
-// Iniciar servidor
+// Puerto dinámico (Render) o 3000 local
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+  console.log(`🚀 Servidor escuchando en puerto ${PORT}`);
 });
 
-module.exports = app; // Necesario para los tests
+module.exports = app; // para pruebas
